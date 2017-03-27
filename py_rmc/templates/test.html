@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+</head>
+<body>
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        $.ajax({
+            context: document.body,
+            url: "http://127.0.0.1:5000/api/v1.0/combatants/1",
+            type: "LINK",
+            success: function (result) {
+                var parsed_result = JSON.parse(result);
+                var error = parsed_result.error;
+//                var parsed_result = result;
+//                var error;
+
+                if (error === undefined) {
+                    console.log("here")
+                }
+            }
+        });
+    });
+</script>
+</body>
+</html>
