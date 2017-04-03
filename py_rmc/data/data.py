@@ -10,7 +10,7 @@ def before_request():
     """Creates database connections for each request.
 
     """
-    engine = sqlalchemy.create_engine('sqlite:///database.sqlite3', echo=True)
+    engine = sqlalchemy.create_engine('sqlite:///database.sqlite3', echo=False)
     Session = sqlalchemy.orm.sessionmaker(bind=engine)
 
     flask.g.database = Session()

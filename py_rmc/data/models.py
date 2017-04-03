@@ -108,8 +108,10 @@ class Combatant(RMCBase):
 
     level = sqlalchemy.Column(sqlalchemy.INTEGER)
     hit_points = sqlalchemy.Column(sqlalchemy.INTEGER)
+    power_points = sqlalchemy.Column(sqlalchemy.INTEGER)
     db = sqlalchemy.Column(sqlalchemy.INTEGER)
     qb = sqlalchemy.Column(sqlalchemy.INTEGER)
+    at = sqlalchemy.Column(sqlalchemy.INTEGER)
 
     # 1 - N Parent
     statuses = sqlalchemy.orm.relationship(
@@ -117,20 +119,6 @@ class Combatant(RMCBase):
         backref='combatant',
         cascade='all, delete, delete-orphan',
     )
-
-    # # 1 - N Parent
-    # attacks_made = sqlalchemy.orm.relationship(
-    #     'Action',
-    #     backref='attacker',
-    #     # cascade='all, delete, delete-orphan',
-    # )
-    #
-    # # 1 - N Parent
-    # attacks_defended = sqlalchemy.orm.relationship(
-    #     'Action',
-    #     backref='defender',
-    #     # cascade='all, delete, delete-orphan',
-    # )
 
     # M - N Parent
     attack_types = sqlalchemy.orm.relationship(
