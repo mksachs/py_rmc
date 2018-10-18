@@ -8,7 +8,7 @@ import json
 import pprint
 
 
-def add_data(data, model, session):
+def add_data(data, model, session, children=False):
     compatible_data = {}
     column_names = list(model.__table__.columns.keys())
     for key in data.keys():
@@ -19,14 +19,26 @@ def add_data(data, model, session):
     session.add(data_object)
     session.commit()
 
-    return data_object.as_dict()
+    relationships = None
+    if children:
+        relationships = get_children(data_object, model)
+
+    return data_object.as_dict(), relationships
 
 
-def list_data(model, session, filters=None):
-    return [x.as_dict() for x in session.query(model).all()]
+def list_data(model, session, filters=None, children=False):
+    ret_list = []
+    for object in session.query(model).all():
+        object_dict = object.as_dict()
+        if children:
+            relationships = get_children(object, model)
+            object_dict['children'] = relationships
+        ret_list.append(object_dict)
+
+    return ret_list
 
 
-def update_data(object_id, data, model, session):
+def update_data(object_id, data, model, session, children=False):
     compatible_data = {}
     column_names = list(model.__table__.columns.keys())
     for key in data.keys():
@@ -40,7 +52,11 @@ def update_data(object_id, data, model, session):
 
     session.commit()
 
-    return data_object.as_dict()
+    relationships = None
+    if children:
+        relationships = get_children(data_object, model)
+
+    return data_object.as_dict(), relationships
 
 
 def delete_data(object_id, model, session):
@@ -52,20 +68,28 @@ def delete_data(object_id, model, session):
     return data_values
 
 
-def get_data(object_id, model, session):
-    data_object = session.query(model).get(object_id)
-
+def get_children(obj, model):
     relationships = sqlalchemy.inspection.inspect(model).relationships
 
     ret_relationships = {}
     for r in relationships:
         r_name = str(r.class_attribute).split('.')[-1]
         ret_relationships[r_name] = []
-        data_object_relationships = getattr(data_object, r_name)
+        data_object_relationships = getattr(obj, r_name)
         for related_data in data_object_relationships:
             ret_relationships[r_name].append(related_data.as_dict())
 
-    return {'obj': data_object.as_dict(), 'rel': ret_relationships}
+    return ret_relationships
+
+
+def get_data(object_id, model, session, children=True):
+    data_object = session.query(model).get(object_id)
+
+    relationships = None
+    if children:
+        relationships = get_children(data_object, model)
+
+    return data_object.as_dict(), relationships
 
 
 def link_data(child_id, child_model, parent_id, parent_name, session):
@@ -89,7 +113,7 @@ def link_data(child_id, child_model, parent_id, parent_name, session):
     link.append(child_obj)
     session.commit()
 
-    return {'parent': parent_obj.as_dict(), 'child': child_obj.as_dict()}
+    return parent_obj.as_dict(), child_obj.as_dict()
 
 
 def unlink_data(child_id, child_model, parent_id, parent_name, session):
@@ -113,103 +137,107 @@ def unlink_data(child_id, child_model, parent_id, parent_name, session):
     link.remove(child_obj)
     session.commit()
 
-    return {'parent': parent_obj.as_dict(), 'child': child_obj.as_dict()}
+    return parent_obj.as_dict(), child_obj.as_dict()
 
 
-def execute_action(action_name, model, session, in_data=None, object_id=None, parent_id=None, parent_name=None):
+def execute_action(
+        action_name, model, session, in_data=None, object_id=None, parent_id=None, parent_name=None, children=False
+):
+    results = {}
     if action_name == 'POST':
-        added_data = add_data(in_data, model, session)
-        if flask.has_app_context():
-            return flask.jsonify(
-                {'added_data': added_data}
-            )
-        else:
-            return {'added_data': added_data}
+        obj, children = add_data(
+            in_data, model, session, children=children
+        )
+        results['obj'] = obj
+        results['children'] = children
     elif action_name == 'PATCH':
-        updated_data = update_data(
-            object_id, in_data, model, flask.g.database
+        obj, children = update_data(
+            object_id, in_data, model, flask.g.database, children=children
         )
-        if flask.has_app_context():
-            return flask.jsonify(
-                {'updated_data': updated_data}
-            )
-        else:
-            return {'updated_data': updated_data}
+        results['obj'] = obj
+        results['children'] = children
     elif action_name == 'DELETE':
-        deleted_data = delete_data(object_id, model, session)
-        if flask.has_app_context():
-            return flask.jsonify(
-                {'deleted_data': deleted_data}
-            )
-        else:
-            return {'deleted_data': deleted_data}
+        obj = delete_data(
+            object_id, model, session
+        )
+        results['obj'] = obj
+        results['children'] = None
     elif action_name == 'LINK':
-        linked_data = link_data(
+        obj, child = link_data(
             object_id, model, parent_id, parent_name, session
         )
-        if flask.has_app_context():
-            return flask.jsonify(
-                {'linked_data': linked_data}
-            )
-        else:
-            return {'linked_data': linked_data}
+        results['obj'] = obj
+        results['child'] = child
     elif action_name == 'UNLINK':
-        unlinked_data = unlink_data(
+        obj, child = unlink_data(
             object_id, model, parent_id, parent_name, session
         )
-        if flask.has_app_context():
-            return flask.jsonify(
-                {'unlinked_data': unlinked_data}
-            )
-        else:
-            return {'unlinked_data': unlinked_data}
+        results['obj'] = obj
+        results['child'] = child
     else:
         if object_id is None:
-            data_list = list_data(model, session)
-            if flask.has_app_context():
-                return flask.jsonify(data_list)
-            else:
-                return data_list
+            objs = list_data(model, session, children=children)
+            results['list'] = objs
         else:
-            print(action_name, model, session, in_data, object_id)
-            data = get_data(object_id, model, session)
-            if flask.has_app_context():
-                return flask.jsonify(data)
-            else:
-                return data
+            obj, children = get_data(object_id, model, session, children=children)
+            results['obj'] = obj
+            results['children'] = children
+
+    results['action'] = action_name
+
+    if flask.has_app_context():
+        return flask.jsonify(results)
+    else:
+        return results
 
 
 @rmc.route('/api/v1.0/combatants', methods=['GET', 'POST'])
 def combatants():
+    children = flask.request.args.get('children')
+    if children is None:
+        children = False
     return execute_action(
-        flask.request.method, py_rmc.data.models.Combatant, flask.g.database, in_data=flask.request.get_json()
+        flask.request.method, py_rmc.data.models.Combatant, flask.g.database,
+        in_data=flask.request.get_json(), children=children
     )
 
 
 @rmc.route('/api/v1.0/combatants/<combatant_id>', methods=['GET', 'PATCH', 'DELETE', 'LINK', 'UNLINK'])
 def combatant(combatant_id):
+    children = flask.request.args.get('children')
+    if children is None:
+        children = False
     return execute_action(
         flask.request.method, py_rmc.data.models.Combatant, flask.g.database,
         in_data=flask.request.get_json(),
         object_id=combatant_id,
         parent_id=flask.request.args.get('parent_id'),
-        parent_name=flask.request.args.get('parent')
+        parent_name=flask.request.args.get('parent'),
+        children=children
     )
 
 
 @rmc.route('/api/v1.0/encounters', methods=['GET', 'POST'])
 def encounters():
+    children = flask.request.args.get('children')
+    if children is None:
+        children = False
     return execute_action(
-        flask.request.method, py_rmc.data.models.Encounter, flask.g.database, in_data=flask.request.get_json()
+        flask.request.method, py_rmc.data.models.Encounter, flask.g.database,
+        in_data=flask.request.get_json(), children=children
     )
 
 
 @rmc.route('/api/v1.0/encounters/<encounter_id>', methods=['GET', 'PATCH', 'DELETE'])
 def encounter(encounter_id):
+    children = flask.request.args.get('children')
+    if children is None:
+        children = False
     return execute_action(
         flask.request.method, py_rmc.data.models.Encounter, flask.g.database,
         in_data=flask.request.get_json(),
-        object_id=encounter_id
+        object_id=encounter_id,
+        children=children
     )
 
 

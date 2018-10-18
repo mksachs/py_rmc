@@ -45,6 +45,7 @@ def add_characters():
                     'hit_points': 14,
                     'power_points': 1,
                     'db': 20,
+                    'shield_db': 0,
                     'qb': 20,
                     'at': 9,
                 }
@@ -63,7 +64,8 @@ def add_characters():
                     'level': 1,
                     'hit_points': 21,
                     'power_points': 3,
-                    'db': 15,
+                    'db': -5,
+                    'shield_db': 20,
                     'qb': 5,
                     'at': 17
                 }
@@ -83,6 +85,7 @@ def add_characters():
                     'hit_points': 13,
                     'power_points': 2,
                     'db': 25,
+                    'shield_db': 0,
                     'qb': 25,
                     'at': 5,
                 }
@@ -101,7 +104,8 @@ def add_characters():
                     'level': 1,
                     'hit_points': 33,
                     'power_points': 1,
-                    'db': 35,
+                    'db': 25,
+                    'shield_db': 10,
                     'qb': 15,
                     'at': 5
                 }
@@ -120,7 +124,8 @@ def add_characters():
                     'level': 1,
                     'hit_points': 62,
                     'power_points': 1,
-                    'db': 25,
+                    'db': 5,
+                    'shield_db': 20,
                     'qb': 5,
                     'at': 14,
                 }
@@ -140,6 +145,7 @@ def add_characters():
                     'hit_points': 16,
                     'power_points': 2,
                     'db': 25,
+                    'shield_db': 0,
                     'qb': 25,
                     'at': 2
                 }
@@ -157,7 +163,9 @@ def add_characters():
                 'kwargs': {
                     'in_data': {
                         'name': 'Ranseur',
-                        'ob': 40
+                        'ob': 40,
+                        'current': True,
+                        'hands': 2
                     }
                 }
             },
@@ -170,7 +178,9 @@ def add_characters():
                 'kwargs': {
                     'in_data': {
                         'name': 'Dagger (thrown)',
-                        'ob': 47
+                        'ob': 47,
+                        'current': False,
+                        'hands': 1
                     }
                 }
             }
@@ -185,7 +195,9 @@ def add_characters():
                 'kwargs': {
                     'in_data': {
                         'name': 'War Hammer',
-                        'ob': 41
+                        'ob': 41,
+                        'current': True,
+                        'hands': 1
                     }
                 }
             },
@@ -197,8 +209,10 @@ def add_characters():
                 ],
                 'kwargs': {
                     'in_data': {
-                        'name': 'Flail (2 handed)',
-                        'ob': 36
+                        'name': 'Flail',
+                        'ob': 36,
+                        'current': False,
+                        'hands': 2
                     }
                 }
             },
@@ -212,21 +226,10 @@ def add_characters():
                 ],
                 'kwargs': {
                     'in_data': {
-                        'name': 'Hand Axe',
-                        'ob': 31
-                    }
-                }
-            },
-            {
-                'args': [
-                    'POST',
-                    py_rmc.data.models.AttackType,
-                    session
-                ],
-                'kwargs': {
-                    'in_data': {
-                        'name': 'Hand Axe',
-                        'ob': 31
+                        'name': 'Hand Axe (THC)',
+                        'ob': 31,
+                        'current': True,
+                        'hands': 2
                     }
                 }
             },
@@ -239,7 +242,9 @@ def add_characters():
                 'kwargs': {
                     'in_data': {
                         'name': 'Light Crossbow',
-                        'ob': 26
+                        'ob': 26,
+                        'current': False,
+                        'hands': 2
                     }
                 }
             }
@@ -254,7 +259,9 @@ def add_characters():
                 'kwargs': {
                     'in_data': {
                         'name': 'Broadsword (Magic +10)',
-                        'ob': 51
+                        'ob': 51,
+                        'current': True,
+                        'hands': 1
                     }
                 }
             },
@@ -267,7 +274,9 @@ def add_characters():
                 'kwargs': {
                     'in_data': {
                         'name': 'Composite Bow',
-                        'ob': 41
+                        'ob': 41,
+                        'current': False,
+                        'hands': 2
                     }
                 }
             },
@@ -280,7 +289,9 @@ def add_characters():
                 'kwargs': {
                     'in_data': {
                         'name': 'Dagger',
-                        'ob': 16
+                        'ob': 16,
+                        'current': False,
+                        'hands': 1
                     }
                 }
             }
@@ -295,7 +306,9 @@ def add_characters():
                 'kwargs': {
                     'in_data': {
                         'name': 'Mace',
-                        'ob': 66
+                        'ob': 66,
+                        'current': True,
+                        'hands': 1
                     }
                 }
             },
@@ -308,7 +321,9 @@ def add_characters():
                 'kwargs': {
                     'in_data': {
                         'name': 'Light Crossbow',
-                        'ob': 40
+                        'ob': 40,
+                        'current': False,
+                        'hands': 2
                     }
                 }
             }
@@ -323,7 +338,9 @@ def add_characters():
                 'kwargs': {
                     'in_data': {
                         'name': 'Dagger (Thrown)',
-                        'ob': 55
+                        'ob': 55,
+                        'current': True,
+                        'hands': 1
                     }
                 }
             }
@@ -335,7 +352,7 @@ def add_characters():
         result = py_rmc.views.api.execute_action(
             *characters[character_name]['args'], **characters[character_name]['kwargs']
         )
-        characters[character_name]['id'] = result['added_data']['id']
+        characters[character_name]['id'] = result['obj']['id']
 
     for character_name in weapons:
         print('Adding {}\'s weapons'.format(character_name))
@@ -343,7 +360,7 @@ def add_characters():
             result = py_rmc.views.api.execute_action(
                 *weapon['args'], **weapon['kwargs']
             )
-            weapon['id'] = result['added_data']['id']
+            weapon['id'] = result['obj']['id']
 
     for character_name in weapons:
         print('Linking {}\'s weapons'.format(character_name))

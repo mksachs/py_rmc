@@ -36,11 +36,69 @@ combatants_encounters = sqlalchemy.Table(
 )
 
 
+class Character(RMCBase):
+    __tablename__ = 'characters'
+
+    id = sqlalchemy.Column(sqlalchemy.INTEGER, primary_key=True)
+
+    name = sqlalchemy.Column(sqlalchemy.Unicode(1024))
+    experience_points = sqlalchemy.Column(sqlalchemy.INTEGER)
+
+    # N - 1 Parent
+    profession_id = sqlalchemy.Column(
+        sqlalchemy.INTEGER,
+        sqlalchemy.ForeignKey('professions.id')
+    )
+    profession = sqlalchemy.orm.relationship(
+        'Profession',
+        backref='characters'
+    )
+
+    race_id = sqlalchemy.Column(
+        sqlalchemy.INTEGER,
+        sqlalchemy.ForeignKey('races.id')
+    )
+    race = sqlalchemy.orm.relationship(
+        'Race',
+        backref='characters'
+    )
+
+    realm_id = sqlalchemy.Column(
+        sqlalchemy.INTEGER,
+        sqlalchemy.ForeignKey('realms.id')
+    )
+    realm = sqlalchemy.orm.relationship(
+        'Realm',
+        backref='characters'
+    )
+
+
+class Profession(RMCBase):
+    __tablename__ = 'professions'
+
+    id = sqlalchemy.Column(sqlalchemy.INTEGER, primary_key=True)
+
+
+class Race(RMCBase):
+    __tablename__ = 'races'
+
+    id = sqlalchemy.Column(sqlalchemy.INTEGER, primary_key=True)
+
+
+class Realm(RMCBase):
+    __tablename__ = 'realms'
+
+    id = sqlalchemy.Column(sqlalchemy.INTEGER, primary_key=True)
+
+
 class Encounter(RMCBase):
     __tablename__ = 'encounters'
 
+    phases = ['initiative', 'actions', 'upkeep']
     id = sqlalchemy.Column(sqlalchemy.INTEGER, primary_key=True)
     name = sqlalchemy.Column(sqlalchemy.Unicode(1024))
+    round = sqlalchemy.Column(sqlalchemy.INTEGER)
+    phase = sqlalchemy.Column(sqlalchemy.Enum(*phases))
 
     # M - N Parent
     combatants = sqlalchemy.orm.relationship(
@@ -110,6 +168,7 @@ class Combatant(RMCBase):
     hit_points = sqlalchemy.Column(sqlalchemy.INTEGER)
     power_points = sqlalchemy.Column(sqlalchemy.INTEGER)
     db = sqlalchemy.Column(sqlalchemy.INTEGER)
+    shield_db = sqlalchemy.Column(sqlalchemy.INTEGER)
     qb = sqlalchemy.Column(sqlalchemy.INTEGER)
     at = sqlalchemy.Column(sqlalchemy.INTEGER)
 
@@ -144,6 +203,8 @@ class AttackType(RMCBase):
     id = sqlalchemy.Column(sqlalchemy.INTEGER, primary_key=True)
     name = sqlalchemy.Column(sqlalchemy.Unicode(1024))
     ob = sqlalchemy.Column(sqlalchemy.INTEGER)
+    current = sqlalchemy.Column(sqlalchemy.BOOLEAN)
+    hands = sqlalchemy.Column(sqlalchemy.INTEGER)
 
     updated = sqlalchemy.Column(
         sqlalchemy.DateTime, server_default=sqlalchemy.func.now(), onupdate=sqlalchemy.func.current_timestamp()

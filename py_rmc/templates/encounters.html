@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+    <script src="http://127.0.0.1:5000/static/py_rmc.js"></script>
+    <style>
+        .stat {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="uber">
+    <div class="page_controls">
+        <span class="control">
+            <input id="new_encounter" type="button" value="New Encounter" onclick="init_popup_new_encounter()" />
+        </span>
+    </div>
+    <div id="content"></div>
+    <div id="overlay"></div>
+</div>
+
+<script type="text/javascript">
+
+    $(document).ready(function() {
+        $.ajax({
+            context: document.body,
+            url: "http://127.0.0.1:5000/api/v1.0/encounters?children=true",
+            type: "GET",
+            success: function (result) {
+                bind_encounters(result.list);
+            }
+        });
+    });
+</script>
+</body>
+</html>
